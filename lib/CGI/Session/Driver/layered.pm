@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use base qw(CGI::Session::Driver);
 
-our $VERSION = '0.2';
+our $VERSION = '0.3';
 
 =head1 NAME 
 

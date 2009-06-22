@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 use CGI::Session;
-use File::Path qw(remove_tree);
+use File::Path qw(rmtree);
 
 use Test::More tests => 11;
 
@@ -9,7 +9,7 @@ my $tmpdir = 'tmp';
 mkdir($tmpdir) || die "Couldn't make tmp dir";
 
 END {
-	remove_tree($tmpdir);
+	rmtree($tmpdir);
 }
 
 my $args = { 
