@@ -1,6 +1,7 @@
 use strict;
 use warnings;
 use CGI::Session;
+use File::Path qw(remove_tree);
 
 use Test::More tests => 7;
 
@@ -8,17 +9,17 @@ my $tmpdir = 'tmp';
 mkdir($tmpdir) || die "Couldn't make tmp dir";
 
 END {
-	system("rm -r $tmpdir"); # rmpath
+	remove_tree($tmpdir);
 }
 
 my $args = { 
-	layers => [
+	Layers => [
 	   {
-	     driver    => 'file',
+	     Driver    => 'file',
 	     Directory => $tmpdir,
 	   },
 	   {
-	     driver => 'db_file',
+	     Driver => 'db_file',
 	     FileName  => "$tmpdir/sessions.db",
 	   }
 	]

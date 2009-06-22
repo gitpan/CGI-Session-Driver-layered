@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use base qw(CGI::Session::Driver);
 
-our $VERSION = '0.1';
+our $VERSION = '0.2';
 
 =head1 NAME 
 
@@ -14,13 +14,13 @@ CGI::Session::Driver::layered - Use multiple layered drivers
 
  use CGI::Session;
  
- my $session = CGI::Session->new("driver:layered", $sessionId, { layers => [
+ my $session = CGI::Session->new("driver:layered", $sessionId, { Layers => [
    {
-     driver    => 'file',
+     Driver    => 'file',
      Directory => '/tmp/foo',
    },
    {
-     driver => 'postgresql'
+     Driver => 'postgresql'
      table  => 'websessions',
      handle => $dbh
    }
@@ -51,12 +51,12 @@ sub init {
     
     $self->{drivers} = [];
     
-    foreach my $layer (@{$self->{layers}}) {
+    foreach my $layer (@{$self->{Layers}}) {
       # make a local copy of the driver, so we can delete it from the args
       # we pass to Driver->new()
-      local $layer->{driver} = $layer->{driver};
+      local $layer->{Driver} = $layer->{Driver};
       
-      my $driver = delete $layer->{driver} || return $self->set_error("A layer was missing a driver."); 
+      my $driver = delete $layer->{Driver} || return $self->set_error("A layer was missing a driver."); 
       
       require "CGI/Session/Driver/$driver.pm";
       
