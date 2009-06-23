@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use base qw(CGI::Session::Driver);
 
-our $VERSION = '0.3';
+our $VERSION = '0.4';
 
 =head1 NAME 
 
@@ -71,7 +71,7 @@ sub store {
     my ($self, $sid, $datastr) = @_;
     
     foreach my $driver (@{$self->{drivers}}) {
-      $driver->store($sid, $datastr);
+      $driver->store($sid, $datastr) || return $driver->errstr;
     }
 }
 
@@ -91,7 +91,7 @@ sub remove {
     my ($self, $sid) = @_;
 
     foreach my $driver (@{$self->{drivers}}) {
-      $driver->delete($sid);
+      $driver->delete($sid) || return $driver->errstr;
     }
 }
 
@@ -120,6 +120,15 @@ sub traverse {
 sub _drivers {
   return @{shift->{drivers}};
 }
+
+
+sub errstr {
+  my ($self) = @_;
+  
+  return join("\n",  map { "[ $_ ]" } grep { length } map { $_->errstr } @{$self->{drivers}});
+}
+
+        
 
 =head1 COPYRIGHT
 
