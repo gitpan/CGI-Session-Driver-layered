@@ -10,5 +10,6 @@ Module::Build->new(
     },
     requires => {
 	'CGI::Session' => 4.00,
+	'Time::HiRes'  => 0,
     }
 )->create_build_script();

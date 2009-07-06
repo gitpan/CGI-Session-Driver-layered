@@ -3,7 +3,7 @@ use warnings;
 use CGI::Session;
 use File::Path qw(rmtree);
 
-use Test::More tests => 7;
+use Test::More tests => 8;
 
 my $tmpdir = 'tmp';
 mkdir($tmpdir) || die "Couldn't make tmp dir";
@@ -40,13 +40,12 @@ isa_ok($drivers[1], 'CGI::Session::Driver::db_file');
 $session->param(test1 => $$);
 $session->flush;
 
-use Data::Dumper;
-
 #
 # check that each store is set up right and has the session
 # 
 foreach my $d (@drivers) {
-	my $data = $session->_serializer->thaw($d->retrieve($id));
+	my ($serial) = (split(m/:/, $d->retrieve($id), 2))[1];
+	my $data = $session->_serializer->thaw($serial);
 	is($data->{test1}, $$);
 }
 
@@ -65,3 +64,21 @@ is($session2->param('test1'), $$);
 
 
 
+#
+# check that delete nukes everything.
+#
+my $session3 = CGI::Session->new("driver:layered", undef, $args);
+
+my $dead = $session3->id;
+$session3->delete();
+$session3->flush() || diag(CGI::Session->errstr);
+
+
+
+my $try = CGI::Session->load("driver:layered", $dead, $args);
+ok(!defined $try->id);
+
+if (defined $try->id) {
+	diag("Deleted $dead");
+	diag("Zombie ID: " . $try->id);
+}

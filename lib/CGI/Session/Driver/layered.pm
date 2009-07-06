@@ -4,7 +4,9 @@ use strict;
 use warnings;
 use base qw(CGI::Session::Driver);
 
-our $VERSION = '0.4';
+use Time::HiRes qw(time);
+
+our $VERSION = '0.5';
 
 =head1 NAME 
 
@@ -30,8 +32,8 @@ CGI::Session::Driver::layered - Use multiple layered drivers
 
 CGI::Session::Driver::Layered provides a interface for using multple drivers
 to store sessions.  Each session is stored in all the configured drivers. When
-fetching a session, the first driver to return a session is used, the drivers
-being searched in the order they were configured.
+fetching a session, the driver with the most recent copy of the session is used.
+The drivers are searched in the order they were configured.
 
 =head1 OPTIONS
 
@@ -70,29 +72,49 @@ sub init {
 sub store {
     my ($self, $sid, $datastr) = @_;
     
+    $datastr = time . ':' . $datastr;
+    
+    my $ret = 1;
+    
     foreach my $driver (@{$self->{drivers}}) {
-      $driver->store($sid, $datastr) || return $driver->errstr;
+      $driver->store($sid, $datastr) || do { $ret = 0 };
     }
+    
+    return $ret if $ret;
+    return;
 }
 
 sub retrieve {
     my ($self, $sid) = @_;
     
+    # atime at 0, data at 1
+    my $latest = [0, ''];
+    
     foreach my $driver (@{$self->{drivers}}) {
       if (my $str = $driver->retrieve($sid)) {
-        return $str;
+        my ($atime, $data) = split(m/:/, $str, 2);
+        
+        if ($atime > $latest->[0]) {
+          $latest = [$atime, $data];
+        }
       }
     }
     
-    return '';
+    return $latest->[1];
 }
 
 sub remove {
     my ($self, $sid) = @_;
 
+    my $ret = 1;
+    
     foreach my $driver (@{$self->{drivers}}) {
-      $driver->delete($sid) || return $driver->errstr;
+      if (!$driver->delete($sid)) {
+        $ret = 0;
+      }    
     }
+    
+    return $ret;
 }
 
 sub traverse {
