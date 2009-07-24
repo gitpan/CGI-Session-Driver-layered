@@ -3,24 +3,26 @@ use warnings;
 use CGI::Session;
 use File::Path qw(rmtree);
 
-use Test::More tests => 8;
+use Test::More tests => 9;
 
-my $tmpdir = 'tmp';
-mkdir($tmpdir) || die "Couldn't make tmp dir";
+my @tmpdirs = qw(tmp1 tmp2);
+for (@tmpdirs) {
+	mkdir($_) || die "Couldn't make dir $_: $!\n";
+}
 
 END {
-	rmtree($tmpdir);
+	rmtree($_) for @tmpdirs;
 }
 
 my $args = { 
 	Layers => [
 	   {
 	     Driver    => 'file',
-	     Directory => $tmpdir,
+	     Directory => $tmpdirs[0],
 	   },
 	   {
-	     Driver => 'db_file',
-	     FileName  => "$tmpdir/sessions.db",
+	     Driver     => 'file',
+	     Directory  => $tmpdirs[1],
 	   }
 	]
 };
@@ -35,7 +37,9 @@ my @drivers = $session->_driver->_drivers;
 my $id      = $session->id;
 
 isa_ok($drivers[0], 'CGI::Session::Driver::file');
-isa_ok($drivers[1], 'CGI::Session::Driver::db_file');
+isa_ok($drivers[1], 'CGI::Session::Driver::file');
+
+ok($drivers[0] != $drivers[1]);
 
 $session->param(test1 => $$);
 $session->flush;

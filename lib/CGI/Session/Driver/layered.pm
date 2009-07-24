@@ -6,7 +6,7 @@ use base qw(CGI::Session::Driver);
 
 use Time::HiRes qw(time);
 
-our $VERSION = '0.5';
+our $VERSION = '0.6';
 
 =head1 NAME 
 

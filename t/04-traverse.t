@@ -5,25 +5,29 @@ use File::Path qw(rmtree);
 
 use Test::More tests => 11;
 
-my $tmpdir = 'tmp';
-mkdir($tmpdir) || die "Couldn't make tmp dir";
+
+my @tmpdirs = qw(tmp1 tmp2);
+for (@tmpdirs) {
+	mkdir($_) || die "Couldn't make dir $_: $!\n";
+}
 
 END {
-	rmtree($tmpdir);
+	rmtree($_) for @tmpdirs;
 }
 
 my $args = { 
 	Layers => [
 	   {
 	     Driver    => 'file',
-	     Directory => $tmpdir,
+	     Directory => $tmpdirs[0],
 	   },
 	   {
-	     Driver => 'db_file',
-	     FileName  => "$tmpdir/sessions.db",
+	     Driver     => 'file',
+	     Directory  => $tmpdirs[1],
 	   }
 	]
 };
+
 
 #
 # make a few sessions
