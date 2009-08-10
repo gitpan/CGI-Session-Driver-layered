@@ -6,7 +6,7 @@ use base qw(CGI::Session::Driver);
 
 use Time::HiRes qw(time);
 
-our $VERSION = '0.6';
+our $VERSION = '0.7';
 
 =head1 NAME 
 
@@ -109,7 +109,7 @@ sub remove {
     my $ret = 1;
     
     foreach my $driver (@{$self->{drivers}}) {
-      if (!$driver->delete($sid)) {
+      if (!$driver->remove($sid)) {
         $ret = 0;
       }    
     }
