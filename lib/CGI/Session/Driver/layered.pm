@@ -6,7 +6,7 @@ use base qw(CGI::Session::Driver);
 
 use Time::HiRes qw(time);
 
-our $VERSION = '0.7';
+our $VERSION = '0.8';
 
 =head1 NAME 
 
@@ -62,7 +62,12 @@ sub init {
       
       require "CGI/Session/Driver/$driver.pm";
       
-      push(@{$self->{drivers}}, "CGI::Session::Driver::$driver"->new($layer));
+      my $obj = eval { "CGI::Session::Driver::$driver"->new($layer) };
+      push(@{$self->{drivers}}, $obj) if $obj;
+    }
+    
+    if (@{$self->{drivers}} == 0) {
+        return $self->set_error("Could not load any of the layers.")
     }
     
     return $self;
@@ -77,7 +82,7 @@ sub store {
     my $ret = 1;
     
     foreach my $driver (@{$self->{drivers}}) {
-      $driver->store($sid, $datastr) || do { $ret = 0 };
+      eval { $driver->store($sid, $datastr) } || do { $ret = 0 };
     }
     
     return $ret if $ret;
@@ -91,12 +96,13 @@ sub retrieve {
     my $latest = [0, ''];
     
     foreach my $driver (@{$self->{drivers}}) {
-      if (my $str = $driver->retrieve($sid)) {
-        my ($atime, $data) = split(m/:/, $str, 2);
+        my $str = eval { $driver->retrieve($sid) };
+        if ($str) {
+            my ($atime, $data) = split(m/:/, $str, 2);
         
-        if ($atime > $latest->[0]) {
-          $latest = [$atime, $data];
-        }
+            if ($atime > $latest->[0]) {
+              $latest = [$atime, $data];
+            }
       }
     }
     
@@ -109,7 +115,10 @@ sub remove {
     my $ret = 1;
     
     foreach my $driver (@{$self->{drivers}}) {
-      if (!$driver->remove($sid)) {
+      my $ret = eval {
+        $driver->remove($sid);
+      };
+      if ($@ || !$ret) {
         $ret = 0;
       }    
     }
@@ -133,9 +142,20 @@ sub traverse {
       $coderef->($sid);
     };
     
+    my $ok = 1;
+    
     foreach my $driver (@{$self->{drivers}}) {
-      $driver->traverse($visitor);
+      $ok &&= eval {
+        $driver->traverse($visitor);
+        1;
+      };
     }
+    
+    if (!$ok) {
+        return $self->set_error($@);
+    }
+    
+    return 1;
 }
 
 
